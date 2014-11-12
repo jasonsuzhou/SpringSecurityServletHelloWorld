@@ -1,0 +1,89 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+	http://www.springframework.org/schema/security
+	http://www.springframework.org/schema/security/spring-security-3.2.xsd">
+
+	<!-- phase 1 study 
+	<http auto-config="true">
+		<intercept-url pattern="/admin**" access="ROLE_ADMIN" />
+		<intercept-url pattern="/dba**" access="ROLE_ADMIN,ROLE_DBA" />
+		<form-login login-page="/login"
+					default-target-url="/welcome"
+					authentication-failure-url="/login?error"
+					username-parameter="username"
+					password-parameter="password"
+					/>
+		<logout logout-success-url="/login?logout"/>
+		<csrf/>
+	</http>
+	<authentication-manager>
+		<authentication-provider>
+			<user-service>
+				<user name="jasonyao" password="jasonyao" authorities="ROLE_ADMIN" />
+				<user name="suyang" password="suyang" authorities="ROLE_DBA" />
+				<user name="salk" password="salk" authorities="ROLE_USER" />
+			</user-service>
+		</authentication-provider>
+	</authentication-manager>
+	-->
+	<!-- phase 2 study 
+	<http auto-config="true" use-expressions="true">
+		<intercept-url pattern="/admin**" access="hasRole('ROLE_ADMIN')"/>
+		<access-denied-handler error-page="/403"/>
+		<form-login
+			login-page="/login"
+			default-target-url="/welcome"
+			authentication-failure-url="/login?error"
+			username-parameter="username"
+			password-parameter="password"
+		/>
+		<logout logout-success-url="/login?logout"/>
+		<csrf/>
+	</http>
+	//query user and user roles from database 
+	<authentication-manager>
+		<authentication-provider>
+			<jdbc-user-service data-source-ref="dataSource"
+				users-by-username-query="select username,password,enabled from users where username=?"
+				authorities-by-username-query="select username,role from user_roles where username=?"
+			/>
+		</authentication-provider>
+	</authentication-manager>
+	-->
+	<!-- phase 3 study -->
+	<http auto-config="true" use-expressions="true">
+		<intercept-url pattern="/admin**" access="hasRole('ROLE_ADMIN')"/>
+		<access-denied-handler error-page="/403"/>
+		<form-login
+			login-page="/login"
+			default-target-url="/welcome"
+			authentication-failure-url="/login?error"
+			username-parameter="username"
+			password-parameter="password"
+		/>
+		<logout logout-success-url="/login?logout"/>
+		<csrf/>
+	</http>
+	<beans:bean id="customUserDetailsService"
+		class="com.mh.model.user.service.CustomUserDetailsService">
+		<beans:property name="usersByUsernameQuery" value="select * from users where username = ?"/>
+		<beans:property name="authoritiesByUsernameQuery" value="select username, role from user_roles where username =?" />
+		<beans:property name="dataSource" ref="dataSource" />
+	</beans:bean>
+	
+	<beans:bean id="userDetailsDao" class="com.mh.model.user.dao.UserDetailsDaoImpl" >
+		<beans:property name="jdbcTemplate" ref="jdbcTemplate"></beans:property>
+	</beans:bean>
+	
+	<beans:bean id="authenticationProvider"
+		class="com.mh.web.handler.LimitLoginAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="customUserDetailsService" />
+		<beans:property name="userDetailsDao" ref="userDetailsDao" />
+	</beans:bean>
+	
+	<authentication-manager>
+		<authentication-provider ref="authenticationProvider" />
+	</authentication-manager>
+</beans:beans>
